@@ -1,4 +1,6 @@
 # emg_from_lfp
+> **This package is no longer maintained here, and has been moved to [ecephys.emg_from_lfp](https://github.com/CSC-UW/ecephys)**
+
 
 Derive EMG from LFP through correlation of highfrequency activity.
 
