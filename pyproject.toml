@@ -1,0 +1,30 @@
+[project]
+name = "emg_from_lfp"
+version = "0.1.0"
+description = "Derive a synthetic EMG from LFP via correlation of high-frequency activity (Schomburg et al. 2014; Buzsaki bz_EMGFromLFP)."
+readme = "README.md"
+authors = [
+    { name = "Graham Findlay", email = "gfindlay@wisc.edu" },
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "scipy",
+    "numba>=0.60",
+]
+
+[project.urls]
+Repository = "https://github.com/CSC-UW/emg_from_lfp.git"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "ruff",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.2,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 88
