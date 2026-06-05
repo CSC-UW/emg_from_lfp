@@ -5,11 +5,18 @@ recording) by measuring the correlation of high-frequency activity across
 spatially separated channels in sliding windows. When channels share a common
 signal — e.g. EMG contamination during movement — their high-frequency activity
 co-varies, so this correlation tracks muscle tone without a dedicated EMG
-electrode. Widely used as a movement/arousal proxy for sleep scoring.
+electrode. Useful as a movement/arousal proxy for sleep scoring.
 
-This is a self-contained port of Buzsaki's `bz_EMGFromLFP.m`, based on Erik
-Schomburg's method (Schomburg et al., *Neuron* 2014). Dependencies are minimal
-(`numpy`, `scipy`, `numba`).
+This package originated as a self-contained port of the Buzsaki lab's
+[`bz_EMGFromLFP.m`](https://github.com/buzsakilab/buzcode/blob/master/detectors/bz_EMGFromLFP.m), based on Erik Schomburg's method.
+Further optimizations and extensions of the method have been added.
+
+## Citation
+
+If you use this method, please cite:
+
+> Schomburg, E. W., et al. (2014). Theta phase segregation of input-specific
+> gamma patterns in entorhinal-hippocampal networks. *Neuron*, 84(2), 470-485.
 
 ## Install
 
@@ -34,23 +41,16 @@ print(DEFAULTS)  # target_sf=20 Hz, window_size=25 s, band 300-600 Hz, ...
 ### Methods
 
 - **`per_window`** — exact mean pairwise Pearson correlation, re-normalized
-  within each window. Amplitude-independent, bounded to `[-1, 1]`. Computed with
-  an incremental sliding-window numba kernel (visits each sample O(1) times).
+  within each window. Amplitude-independent, bounded to `[-1, 1]`. Numerically
+  identical to the published method and reference implementation, but computed with
+  an incremental sliding-window numba kernel (visits each sample O(1) times) for
+  huge memory & compute gains.
 - **`global`** — faster global-normalization approximation (a single boxcar
   moving average). Tracks the shape/ranking of `per_window` closely but is
-  **amplitude-weighted** and not bounded to `[-1, 1]`.
+  **amplitude-weighted** and not bounded to `[-1, 1]`. Sometimes this is desirable,
+  since the amplitude-weighting may carry information about the intensity of movement.
 - **`both`** (default) — returns both as a dict; the band-pass filter (the
   dominant cost) is computed once and shared.
 
-A `(near-)constant channel within a window yields `NaN` for that window,
+A (near-)constant channel within a window yields `NaN` for that window,
 matching `scipy.stats.pearsonr`.
-
-## Citation
-
-If you use this method, please cite:
-
-> Schomburg, E. W., et al. (2014). Theta phase segregation of input-specific
-> gamma patterns in entorhinal-hippocampal networks. *Neuron*, 84(2), 470-485.
-
-Original MATLAB implementation: `bz_EMGFromLFP.m` (Buzsaki lab, buzcode).
-Original Python port: Tom Bugnon (2020).

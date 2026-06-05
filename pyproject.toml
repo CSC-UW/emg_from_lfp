@@ -1,7 +1,7 @@
 [project]
 name = "emg_from_lfp"
 version = "0.1.0"
-description = "Derive a synthetic EMG from LFP via correlation of high-frequency activity (Schomburg et al. 2014; Buzsaki bz_EMGFromLFP)."
+description = "Derive a synthetic EMG from LFP via correlation of high-frequency activity (Schomburg et al. 2014)."
 readme = "README.md"
 authors = [
     { name = "Graham Findlay", email = "gfindlay@wisc.edu" },

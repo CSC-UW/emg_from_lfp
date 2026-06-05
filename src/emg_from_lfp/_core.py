@@ -1,25 +1,13 @@
 # -*- coding: utf-8 -*-
 
 """
-Derive EMG from LFP through correlation of highfrequency activity.
-
-This code is basically a Python translation and readaptation of the
-bz_EMGFromLFP.m function from Buzsaki's lab.
-(`https://github.com/buzsakilab/buzcode/blob/master/detectors/bz_EMGFromLFP.m`).
-Based on Erik Schomburg's and code and work, published in `Theta Phase
-Segregation of Input-Specific Gamma Patterns in Entorhinal-Hippocampal Networks,
-Schomburg et al., Neuron 2014.
-
-
-Tom Bugnon, 01/2020
+Derive EMG from LFP through correlation of high frequency activity.
 """
 
 import numpy as np
 import scipy.signal
 from numba import njit
 
-#: Default parameters for :func:`compute` (single source of truth). `wp`/`ws`
-#: are tuples to avoid the mutable-default-argument pitfall.
 DEFAULTS = dict(
     target_sf=20,
     window_size=25.0,
@@ -46,7 +34,7 @@ def compute(
 ):
     """Derive EMG from LFP.
 
-    Compute av. correlation across channel pairs in sliding windows.
+    Compute average correlation across channel pairs in sliding windows.
 
     Args:
         lfp: (nchan x nsamples) lfp data array
