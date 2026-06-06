@@ -7,6 +7,27 @@ authors = [
     { name = "Graham Findlay", email = "gfindlay@wisc.edu" },
 ]
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = [
+    "EMG",
+    "LFP",
+    "electromyogram",
+    "electrophysiology",
+    "neuroscience",
+    "signal-processing",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+]
 dependencies = [
     "numpy",
     "scipy",
@@ -14,7 +35,9 @@ dependencies = [
 ]
 
 [project.urls]
+Homepage = "https://github.com/CSC-UW/emg_from_lfp"
 Repository = "https://github.com/CSC-UW/emg_from_lfp.git"
+Issues = "https://github.com/CSC-UW/emg_from_lfp/issues"
 
 [dependency-groups]
 dev = [

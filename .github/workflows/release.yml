@@ -1,0 +1,41 @@
+name: release
+
+# Build and publish to PyPI when a GitHub Release is published.
+# Auth is via PyPI Trusted Publishing (OIDC) — no API token/secret required.
+# The PyPI publisher must be configured for: owner CSC-UW, repo emg_from_lfp,
+# workflow release.yml, environment pypi.
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Run tests
+        run: uv run --group dev pytest
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # required for Trusted Publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Build sdist and wheel
+        run: uv build
+      - name: Verify built version matches the release tag
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if ! ls dist/*"$version"*.tar.gz >/dev/null 2>&1; then
+            echo "::error::No dist matches tag ${GITHUB_REF_NAME}. Bump version in pyproject.toml to ${version}."
+            ls -1 dist/
+            exit 1
+          fi
+      - name: Publish to PyPI
+        run: uv publish
