@@ -21,7 +21,7 @@ If you use this method, please cite:
 ## Install
 
 ```bash
-pip install git+https://github.com/CSC-UW/emg_from_lfp.git
+pip install emg-from-lfp
 ```
 
 ## Usage
