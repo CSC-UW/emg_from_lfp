@@ -4,34 +4,61 @@
 Derive EMG from LFP through correlation of high frequency activity.
 """
 
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import Literal, TypedDict
+
 import numpy as np
+import numpy.typing as npt
 import scipy.signal
 from numba import njit
 
-DEFAULTS = dict(
-    target_sf=20,
-    window_size=25.0,
-    wp=(300, 600),
-    ws=(275, 625),
-    gpass=1,
-    gstop=60,
-    ftype="butter",
-    method="both",
-)
+# A 1-D float result array, shape (1, nSteps) for the public estimators.
+FloatArray = npt.NDArray[np.float64]
+# Filter band edges (passband/stopband), in Hz; accepts tuples or arrays.
+Band = Sequence[float] | npt.NDArray[np.floating]
+# Selector for which EMG estimator(s) to compute.
+Method = Literal["per_window", "global", "both"]
+
+
+class EmgDefaults(TypedDict):
+    """Static types for the :data:`DEFAULTS` parameter dict."""
+
+    target_sf: int
+    window_size: float
+    wp: tuple[int, int]
+    ws: tuple[int, int]
+    gpass: int
+    gstop: int
+    ftype: str
+    method: Method
+
+
+DEFAULTS: EmgDefaults = {
+    "target_sf": 20,
+    "window_size": 25.0,
+    "wp": (300, 600),
+    "ws": (275, 625),
+    "gpass": 1,
+    "gstop": 60,
+    "ftype": "butter",
+    "method": "both",
+}
 
 
 def compute(
-    lfp,
-    sf,
-    target_sf=DEFAULTS["target_sf"],
-    window_size=DEFAULTS["window_size"],
-    wp=DEFAULTS["wp"],
-    ws=DEFAULTS["ws"],
-    gpass=DEFAULTS["gpass"],
-    gstop=DEFAULTS["gstop"],
-    ftype=DEFAULTS["ftype"],
-    method=DEFAULTS["method"],
-):
+    lfp: npt.NDArray,
+    sf: float,
+    target_sf: float = DEFAULTS["target_sf"],
+    window_size: float = DEFAULTS["window_size"],
+    wp: Band = DEFAULTS["wp"],
+    ws: Band = DEFAULTS["ws"],
+    gpass: float = DEFAULTS["gpass"],
+    gstop: float = DEFAULTS["gstop"],
+    ftype: str = DEFAULTS["ftype"],
+    method: Method = DEFAULTS["method"],
+) -> FloatArray | dict[str, FloatArray]:
     """Derive EMG from LFP.
 
     Compute average correlation across channel pairs in sliding windows.
@@ -60,7 +87,7 @@ def compute(
     """
     estimators = {"per_window": _compute_av_corr, "global": _compute_global_corr}
     if method == "both":
-        wanted = ("per_window", "global")
+        wanted: tuple[str, ...] = ("per_window", "global")
     elif method in estimators:
         wanted = (method,)
     else:
@@ -85,7 +112,7 @@ def compute(
     return results if method == "both" else results[method]
 
 
-def _validate_band(sf, wp, ws):
+def _validate_band(sf: float, wp: Band, ws: Band) -> None:
     """Validate the sampling rate and filter band edges, with informative errors.
 
     Catches the common failure modes of ``scipy.signal.iirdesign`` *before* they
@@ -112,7 +139,15 @@ def _validate_band(sf, wp, ws):
         )
 
 
-def _iirfilt(data, wp, ws, gpass, gstop, ftype="butter", sf=None):
+def _iirfilt(
+    data: npt.NDArray,
+    wp: Band,
+    ws: Band,
+    gpass: float,
+    gstop: float,
+    ftype: str = "butter",
+    sf: float | None = None,
+) -> npt.NDArray[np.floating]:
     """Filter `data` along last dimension using an iir filter."""
 
     # Check input values to avoid https://github.com/scipy/scipy/issues/11559
@@ -154,7 +189,12 @@ def _iirfilt(data, wp, ws, gpass, gstop, ftype="butter", sf=None):
 _DEGENERATE_RTOL = 1e-8
 
 
-def _window_bounds(n_samps, data_sf, target_sf, window_size):
+def _window_bounds(
+    n_samps: int,
+    data_sf: float,
+    target_sf: float,
+    window_size: float,
+) -> tuple[npt.NDArray[np.int_], npt.NDArray[np.int_], npt.NDArray[np.int_], int]:
     """Window grid and per-window sample bounds.
 
     Returns (centers, a, b_excl, window_n_samps) where each window covers the
@@ -173,7 +213,16 @@ def _window_bounds(n_samps, data_sf, target_sf, window_size):
 
 
 @njit(cache=True, fastmath=False)
-def _av_corr_kernel(data, a, b, pi, pj, gvar, rtol, recompute_every):
+def _av_corr_kernel(
+    data: FloatArray,
+    a: npt.NDArray[np.int64],
+    b: npt.NDArray[np.int64],
+    pi: npt.NDArray[np.int64],
+    pj: npt.NDArray[np.int64],
+    gvar: FloatArray,
+    rtol: float,
+    recompute_every: int | np.int64,
+) -> FloatArray:
     """Mean pairwise Pearson correlation per window via incremental sliding sums.
 
     For each channel pair, running sums (Sx, Sy, Sxx, Syy, Sxy) are advanced as
@@ -269,7 +318,13 @@ def _av_corr_kernel(data, a, b, pi, pj, gvar, rtol, recompute_every):
     return acc
 
 
-def _compute_av_corr(data, data_sf, target_sf, window_size, recompute_every=4096):
+def _compute_av_corr(
+    data: npt.NDArray[np.floating],
+    data_sf: float,
+    target_sf: float,
+    window_size: float,
+    recompute_every: int = 4096,
+) -> FloatArray:
     """Compute av. correlation across channel pairs in sliding windows.
 
     Each output sample is the mean Pearson correlation, across all channel pairs,
@@ -321,7 +376,12 @@ def _compute_av_corr(data, data_sf, target_sf, window_size, recompute_every=4096
     return (acc / n_pairs).reshape(1, -1)
 
 
-def _compute_global_corr(data, data_sf, target_sf, window_size):
+def _compute_global_corr(
+    data: npt.NDArray[np.floating],
+    data_sf: float,
+    target_sf: float,
+    window_size: float,
+) -> FloatArray:
     """Approximate mean pairwise correlation via global normalization.
 
     Faster/simpler alternative to :func:`_compute_av_corr`: each channel is
